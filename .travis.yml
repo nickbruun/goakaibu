@@ -1,4 +1,6 @@
-language: go
+language:
+  - go
+  - python
 notifications:
   email: false
 python:
@@ -13,7 +15,7 @@ install:
   - cd snappy-1.1.2 && ./configure && sudo make all install && cd ..
   - git clone https://github.com/nickbruun/akaibu-format.git format
   - cd format
-  - sudo pip install -r requirements.txt
+  - pip install -r requirements.txt
   - make samples
   - cd ..
   - mkdir fixtures
