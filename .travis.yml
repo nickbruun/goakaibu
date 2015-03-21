@@ -15,7 +15,7 @@ install:
   - git clone https://github.com/nickbruun/akaibu-format.git format
   - cd format
   - sudo pip install -r requirements.txt
-  - make samples
+  - sudo make samples
   - cd ..
   - mkdir fixtures
   - cp format/samples/*.akaibu fixtures/
