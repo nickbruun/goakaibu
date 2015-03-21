@@ -36,11 +36,14 @@ func (w *writer) Write(p []byte) (err error) {
 type snappyWriter struct {
 	bw *bufio.Writer
 	sw *snappy.Writer
+	sbw *bufio.Writer
 }
 
 func (w *snappyWriter) Close() (err error) {
-	if w.bw != nil {
+	if w.sbw != nil {
+		err = w.sbw.Flush()
 		err = w.bw.Flush()
+		w.sbw = nil
 		w.bw = nil
 		w.sw = nil
 	}
@@ -48,7 +51,7 @@ func (w *snappyWriter) Close() (err error) {
 }
 
 func (w *snappyWriter) Write(p []byte) (err error) {
-	return writeRecord(w.sw, p)
+	return writeRecord(w.sbw, p)
 }
 
 // Write a header.
@@ -57,7 +60,7 @@ func writeHeader(w io.Writer, c Compression) error {
 }
 
 // Write a record.
-	func writeRecord(w io.Writer, p []byte) (err error) {
+func writeRecord(w io.Writer, p []byte) (err error) {
 	var sizeData []byte
 	if sizeData, err = PackInt(uint64(len(p))); err != nil {
 		return
@@ -128,5 +131,5 @@ func NewSnappyCompressedWriter(w io.Writer) (Writer, error) {
 		return nil, err
 	}
 
-	return &snappyWriter{bw, sw}, nil
+	return &snappyWriter{bw, sw, bufio.NewWriterSize(sw, 1 << 16)}, nil
 }
