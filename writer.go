@@ -1,9 +1,9 @@
 package akaibu
 
 import (
+	"bufio"
 	"code.google.com/p/snappy-go/snappy"
 	"compress/zlib"
-	"bufio"
 	"io"
 )
 
@@ -34,8 +34,8 @@ func (w *writer) Write(p []byte) (err error) {
 
 // Snappy-specific writer implementation.
 type snappyWriter struct {
-	bw *bufio.Writer
-	sw *snappy.Writer
+	bw  *bufio.Writer
+	sw  *snappy.Writer
 	sbw *bufio.Writer
 }
 
@@ -131,5 +131,5 @@ func NewSnappyCompressedWriter(w io.Writer) (Writer, error) {
 		return nil, err
 	}
 
-	return &snappyWriter{bw, sw, bufio.NewWriterSize(sw, 1 << 16)}, nil
+	return &snappyWriter{bw, sw, bufio.NewWriterSize(sw, 1<<16)}, nil
 }
