@@ -1,6 +1,8 @@
 package akaibu
 
 import (
+	"code.google.com/p/snappy-go/snappy"
+	"compress/zlib"
 	"bufio"
 	"io"
 )
@@ -18,19 +20,58 @@ type writer struct {
 	w io.WriteCloser
 }
 
-// New writer from io.WriteCloser.
-func newWriter(w io.WriteCloser, c Compression) (Writer, error) {
-	wr := &writer{
-		w: w,
+func (w *writer) Close() (err error) {
+	if w.w != nil {
+		err = w.w.Close()
+		w.w = nil
+	}
+	return
+}
+
+func (w *writer) Write(p []byte) (err error) {
+	return writeRecord(w.w, p)
+}
+
+// Snappy-specific writer implementation.
+type snappyWriter struct {
+	bw *bufio.Writer
+	sw *snappy.Writer
+}
+
+func (w *snappyWriter) Close() (err error) {
+	if w.bw != nil {
+		err = w.bw.Flush()
+		w.bw = nil
+		w.sw = nil
+	}
+	return
+}
+
+func (w *snappyWriter) Write(p []byte) (err error) {
+	return writeRecord(w.sw, p)
+}
+
+// Write a header.
+func writeHeader(w io.Writer, c Compression) error {
+	return writeFull(w, []byte{'A', 'K', 'A', 'I', 1, byte(c), 0, 0})
+}
+
+// Write a record.
+	func writeRecord(w io.Writer, p []byte) (err error) {
+	var sizeData []byte
+	if sizeData, err = PackInt(uint64(len(p))); err != nil {
+		return
 	}
 
-	header := []byte{'A', 'K', 'A', 'I', 1, byte(c), 0, 0}
-	if err := wr.writeAll(header); err != nil {
-		wr.Close()
-		return nil, err
+	if err = writeFull(w, sizeData); err != nil {
+		return
 	}
 
-	return wr, nil
+	if len(p) == 0 {
+		return nil
+	}
+
+	return writeFull(w, p)
 }
 
 // New uncompressed writer.
@@ -41,44 +82,51 @@ func NewUncompressedWriter(w io.Writer) (Writer, error) {
 		bw = bufio.NewWriter(w)
 	}
 
-	return newWriter(newFlushCloser(bw), UncompressedCompression)
+	// Attempt to write the header.
+	if err := writeHeader(bw, UncompressedCompression); err != nil {
+		return nil, err
+	}
+
+	return &writer{newFlushCloser(bw)}, nil
 }
 
-func (w *writer) Close() (err error) {
-	if w.w != nil {
-		err = w.w.Close()
-		w.w = nil
+// New zlib-compressed writer.
+//
+// The level has the same function as in compress/zlib.
+func NewZlibCompressedWriter(w io.Writer, level int) (Writer, error) {
+	// Attempt to write the header.
+	if err := writeHeader(w, ZlibCompression); err != nil {
+		return nil, err
 	}
-	return
+
+	// Set up the compression writer.
+	wc, err := zlib.NewWriterLevel(w, level)
+	if err != nil {
+		return nil, err
+	}
+
+	return &writer{wc}, nil
 }
 
-func (w *writer) Write(p []byte) (err error) {
-	var sizeData []byte
-	if sizeData, err = PackInt(uint64(len(p))); err != nil {
-		return
+// New Snappy-compressed writer.
+func NewSnappyCompressedWriter(w io.Writer) (Writer, error) {
+	var bw *bufio.Writer
+	var ok bool
+	if bw, ok = w.(*bufio.Writer); !ok {
+		bw = bufio.NewWriter(w)
 	}
 
-	if err = w.writeAll(sizeData); err != nil {
-		return
+	// Attempt to write the header.
+	if err := writeHeader(w, SnappyCompression); err != nil {
+		return nil, err
 	}
 
-	if len(p) == 0 {
-		return nil
+	// Set up the compression writer and write an empty slice to force the
+	// header to be written.
+	sw := snappy.NewWriter(bw)
+	if _, err := sw.Write([]byte{}); err != nil {
+		return nil, err
 	}
 
-	return w.writeAll(p)
-}
-
-func (w *writer) writeAll(p []byte) (err error) {
-	var n int
-
-	for len(p) > 0 {
-		if n, err = w.w.Write(p); err != nil {
-			break
-		}
-
-		p = p[n:]
-	}
-
-	return
+	return &snappyWriter{bw, sw}, nil
 }

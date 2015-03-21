@@ -32,34 +32,20 @@ func PackInt(v uint64) ([]byte, error) {
 	binary.BigEndian.PutUint64(d, v)
 
 	if v < 16384 {
-		return []byte{
-			d[6] | b10000000,
-			d[7],
-		}, nil
+		d[6] |= b10000000
+		return d[6:], nil
 	}
 
 	if v < 2097152 {
-		return []byte{
-			d[5] | b11000000,
-			d[6],
-			d[7],
-		}, nil
+		d[5] |= b11000000
+		return d[5:], nil
 	}
 
 	if v < 268435456 {
-		return []byte{
-			d[4] | b11100000,
-			d[5],
-			d[6],
-			d[7],
-		}, nil
+		d[4] |= b11100000
+		return d[4:], nil
 	}
 
-	return []byte{
-		d[3] | b11110000,
-		d[4],
-		d[5],
-		d[6],
-		d[7],
-	}, nil
+	d[3] |= b11110000
+	return d[3:], nil
 }
