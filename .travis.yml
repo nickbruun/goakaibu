@@ -19,6 +19,6 @@ install:
   - cd ..
   - mkdir fixtures
   - cp format/samples/*.akaibu fixtures/
-  - go get code.google.com/p/snappy-go/snappy
+  - GOPATH=$(pwd) go get code.google.com/p/snappy-go/snappy
 script:
   - make test
