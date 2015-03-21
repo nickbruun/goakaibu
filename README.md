@@ -1,6 +1,6 @@
 # goakaibu - Akaibu log archive reader and writer for Go
 
-
+Supports the full [Akaibu log archive specification version 1](https://github.com/nickbruun/akaibu-format). Documentation is available on [godoc.org](http://godoc.org/github.com/nickbruun/goakaibu).
 
 ## Testing
 
