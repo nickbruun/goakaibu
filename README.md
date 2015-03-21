@@ -1,6 +1,8 @@
 # goakaibu - Akaibu log archive reader and writer for Go
 
-Supports the full [Akaibu log archive specification version 1](https://github.com/nickbruun/akaibu-format). Documentation is available on [godoc.org](http://godoc.org/github.com/nickbruun/goakaibu).
+[![Build status](https://travis-ci.org/nickbruun/goakaibu.svg?branch=master)](https://travis-ci.org/nickbruun/goakaibu) [![GoDoc](https://godoc.org/github.com/nickbruun/goakaibu?status.svg)](https://godoc.org/github.com/nickbruun/goakaibu)
+
+Supports the full [Akaibu log archive specification version 1](https://github.com/nickbruun/akaibu-format). Documentation is available on [GoDoc](http://godoc.org/github.com/nickbruun/goakaibu).
 
 ## Testing
 
